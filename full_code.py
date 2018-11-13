@@ -124,7 +124,7 @@ def send_data_tcp():
 			time.sleep(2)
 			while ser.inWaiting > 0:
                                 out.append(ser.read(ser.inWaiting()))
-			ser.write(('AT+QIOPEN=1,0,"TCP","50.23.124.66",9012\r').encode())
+			ser.write(('AT+QIOPEN=1,0,"TCP","translate.ubidots.com",9012\r').encode())
 			time.sleep(2)
 			while ser.inWaiting > 0:
                                 out.append(ser.read(ser.inWaiting()))
@@ -146,8 +146,6 @@ def send_data_tcp():
 def craete_data_for_ubidots():
 	data1, data2 = read_data()
 	token = "BBFF-aStyrZ84Id5yovR5YpYs5kQo0UKfq5"
-	port = 9012
-	domain_name = "translate.ubidots.com"
 	tmp = "microchip/1.0|POST|" + str(token) + "|bg96=>catm:" + str(data1) + ",humidity:" + str(data2) + "|end"
 	to_hex = tmp.encode("utf-8").hex()
 	return to_hex
