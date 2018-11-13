@@ -4,28 +4,14 @@ import serial
 import time
 import RPi.GPIO as GPIO
 
-#pinNumber13, constant = 0.0019157088
-def get_senzor_data_every_60_min(pinNumber,constant):
-
-	GPIO.setmode(GPIO.BOARD)
-	GPIO.setup(input,GPIO.IN)
-	rate_cnt = 0
-	time_begin = time.time()
-	while GPIO.input(pinNumber) == 0 or GPIO.input(pinNumber) == 1:
-		time_now = time.time()
-		time_total = time.time()
-		if GPIO.input(pinNumber) == 1:
-			rate_cnt += 1
-		if time_total - time_begin == 10:
-			total_liter = round(rate_cnt * constant,4)
-		if time_now - time_begin == 60:
-			liters_per_min = round(rate_cnt * constant,4)
-		try:
-			None
-		except KeyboardInterrupt:
-			GPIO.cleanup()
-			sys.exit()
-	return total_liter,liters_per_min
+def read_data():
+        with open('tmp.csv','r') as f:
+                lastline = ""
+                for line in f:
+                        lastline = line
+                perLiter = lastline[:3]
+                fullLiter = lastline[:4]
+                return perLiter, fullLiter
 
 
 def serial_ports():
@@ -158,7 +144,7 @@ def send_data_tcp():
 			return False
 
 def craete_data_for_ubidots():
-	data1, data2 = get_senzor_data_every_60_min(13,0.0019157088)
+	data1, data2 = read_data()
 	token = "BBFF-aStyrZ84Id5yovR5YpYs5kQo0UKfq5"
 	port = 9012
 	domain_name = "translate.ubidots.com"
