@@ -5,13 +5,15 @@ import time
 import RPi.GPIO as GPIO
 
 def read_data():
-        with open('tmp.csv','r') as f:
-                lastline = ""
-                for line in f:
-                        lastline = line
-                perLiter = lastline[:3]
-                fullLiter = lastline[:4]
-                return perLiter, fullLiter
+	with open('tmp.csv','r') as f:
+		lastline = ""
+		for line in f:
+			lastline = line
+		print(lastline)
+		perLiter = lastline[:3]
+		fullLiter = lastline[4:]
+		print(perLiter,fullLiter)
+		return perLiter, fullLiter
 
 
 def serial_ports():
@@ -51,6 +53,7 @@ def find_ports_for_AT(portlist):
 
 def select_port_for_use(ATports):
 	max = 0
+	max = str(max)
 	for i in ATports:
 		number = (i[len(i)-1])
 		if number > max:
@@ -108,45 +111,48 @@ def attach_to_network(port):
 			if ser.inWaiting() == 0:
 				return out
 		except KeyboardInterrupt:
-			sys.exit()
+			None
 
-def send_data_tcp():
+def send_data_tcp(port):
 	data = craete_data_for_ubidots()
-	if serial.Serial(port,rtscts=True,dsrdtr=True).isOpen() == True:
+	time.sleep(10)
+	ser2 = serial.Serial(port,rtscts=True,dsrdtr=True)
+	if ser2.isOpen() == True:
 		out = []
-		error = "ERROR"
+		error = 'ERROR'
 		try:
-			ser.write(('AT+QIACT=1\r').encode())
-                        time.sleep(2)
-			while ser.inWaiting > 0:
-				out.append(ser.read(ser.inWaiting()))
-			ser.write(('AT+QICLOSE=0\r').encode())
+			ser2.write(('AT+QIACT=1\r').encode())
 			time.sleep(2)
-			while ser.inWaiting > 0:
-                                out.append(ser.read(ser.inWaiting()))
-			ser.write(('AT+QIOPEN=1,0,"TCP","translate.ubidots.com",9012\r').encode())
+			while ser2.inWaiting() > 0:
+				out.append(ser2.read(ser2.inWaiting()))
+			ser2.write(('AT+QICLOSE=0\r').encode())
 			time.sleep(2)
-			while ser.inWaiting > 0:
-                                out.append(ser.read(ser.inWaiting()))
-			ser.write(('AT+QISENDEX=0,' + '"' + data + '"' + '\r').encode())
+			while ser2.inWaiting() > 0:
+                                out.append(ser2.read(ser2.inWaiting()))
+			ser2.write(('AT+QIOPEN=1,0,"TCP","translate.ubidots.com",9012\r').encode())
 			time.sleep(2)
-			while ser.inWaiting > 0:
-                                out.append(ser.read(ser.inWaiting()))
-			ser.write(('AT+QIRD=0\r').encode())
+			while ser2.inWaiting() > 0:
+                                out.append(ser2.read(ser2.inWaiting()))
+			ser2.write(('AT+QISENDEX=0,' + '"' + data + '"' + '\r').encode())
 			time.sleep(2)
-			while ser.inWaiting > 0:
-                                out.append(ser.read(ser.inWaiting()))
+			while ser2.inWaiting() > 0:
+                                out.append(ser2.read(ser2.inWaiting()))
+			ser2.write(('AT+QIRD=0\r').encode())
+			time.sleep(2)
+			while ser2.inWaiting() > 0:
+                                out.append(ser2.read(ser2.inWaiting()))
+			if ser2.inWaiting() == 0:
+				return True
 		except:
 			None
-		if error in out[3]:
-			return True
-		else:
-			return False
+
 
 def craete_data_for_ubidots():
 	data1, data2 = read_data()
+	print(data1,data2)
+	time.sleep(3)
 	token = "BBFF-aStyrZ84Id5yovR5YpYs5kQo0UKfq5"
-	tmp = "microchip/1.0|POST|" + str(token) + "|bg96=>catm:" + str(data1) + ",humidity:" + str(data2) + "|end"
+	tmp = 'microchip/1.0|POST|' + str(token) + '|bg96=>Liter/min:' + str(data1) + ',Total Liter:' + str(data2) + '|end'
 	to_hex = tmp.encode("utf-8").hex()
 	return to_hex
 
@@ -158,5 +164,4 @@ if __name__ == '__main__':
 	print(AT_PORT)
 	network = attach_to_network(AT_PORT)
 	print(network)
-	if send_data_tcp():
-		print("jee")
+	send_data_tcp(AT_PORT)
